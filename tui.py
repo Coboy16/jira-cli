@@ -5,6 +5,7 @@ import tty
 import termios
 import shutil
 import unicodedata
+import webbrowser
 import requests
 import tempfile
 from pathlib import Path
@@ -22,10 +23,10 @@ C_CYAN   = "\033[38;5;87m"
 C_WHITE  = "\033[97m"
 C_RED    = "\033[38;5;196m"
 
-# ── Mapeo de estados ──────────────────────────────────────────────────────────
-COLUMN_ORDER  = ["Sprint Backlog", "DOING (construcción)", "DOING (construcción hecha)"]
-COLUMN_COLORS = [C_YELLOW,         C_BLUE,                 C_GREEN]
-COLUMN_ICONS  = ["○",              "◐",                    "●"]
+# ── Mapeo de estados (5 columnas como en Jira web) ───────────────────────────
+COLUMN_ORDER  = ["Por Hacer", "En Progreso", "En Revisión", "Listo para Entregar", "Hecho"]
+COLUMN_COLORS = [C_YELLOW,    C_BLUE,        C_CYAN,        C_GREEN,               C_WHITE]
+COLUMN_ICONS  = ["○",         "◐",           "◑",           "◕",                   "●"]
 
 STATUS_MAP = {name: (color, icon)
               for name, color, icon in zip(COLUMN_ORDER, COLUMN_COLORS, COLUMN_ICONS)}
@@ -36,7 +37,10 @@ VALID_EXTENSIONS = IMAGE_EXTS
 
 # ── Helpers generales ─────────────────────────────────────────────────────────
 def status_display(status):
-    return STATUS_MAP.get(status, (C_WHITE, "?"))
+    if status in STATUS_MAP:
+        return STATUS_MAP[status]
+    idx = get_column_index(status)
+    return COLUMN_COLORS[idx], COLUMN_ICONS[idx]
 
 
 def clear():
@@ -97,22 +101,30 @@ def get_column_index(status):
     for i, name in enumerate(COLUMN_ORDER):
         if s == name:
             return i
-    s_norm = _normalize(s)
+    sl = _normalize(s)
     for i, name in enumerate(COLUMN_ORDER):
-        if s_norm == _normalize(name):
+        if sl == _normalize(name):
             return i
-    sl = s.lower()
-    if "hecha" in sl or "hecho" in sl:
+    # 4: Hecho / Done / Cerrado / Completado
+    if any(w in sl for w in ("hecho", "done", "complet", "cerrad", "resuelto",
+                              "resolved", "closed", "finaliz", "terminad")):
+        return 4
+    # 3: Listo para Entregar / Ready
+    if any(w in sl for w in ("listo", "ready", "entregar", "entrega")):
+        return 3
+    # 2: En Revisión / In Review
+    if any(w in sl for w in ("review", "revision", "revisio")):
         return 2
-    if "doing" in sl or "construcci" in sl:
+    # 1: En Progreso / En Curso / Doing
+    if any(w in sl for w in ("progress", "curso", "ejecuci", "doing", "construcci",
+                              "activ", "started", "proceso", "progres", "desarrollo")):
         return 1
-    if "backlog" in sl or "sprint" in sl or "hacer" in sl:
-        return 0
+    # 0: Por Hacer / Backlog / Pendiente (default)
     return 0
 
 
 def group_by_status(issues):
-    cols = [[], [], []]
+    cols = [[] for _ in COLUMN_ORDER]
     for issue in issues:
         cols[get_column_index(issue.get("status", ""))].append(issue)
     return cols
@@ -388,20 +400,20 @@ def render_image_preview(url, headers, width=55):
                 pass
 
 
-# ── Fix 3 v3: Vista expandida de imagen ──────────────────────────────────────
-def expand_image(att, headers):
-    """Muestra la imagen en modo pantalla completa. Cualquier tecla vuelve."""
+# ── Abrir imagen en navegador ────────────────────────────────────────────────
+def expand_image(att, headers=None):
+    """Abre la imagen en el navegador por defecto del sistema."""
+    url = att.get("url", "")
+    if not url:
+        return
     clear()
-    ts = term_size()
-    w  = ts.columns
-
-    print(f"\n  {BOLD}{att['name']}{RESET}  {DIM}[cualquier tecla para volver]{RESET}\n")
-    preview = render_image_preview(att["url"], headers, width=w - 4)
-    for line in preview:
-        print(line)
-
-    print(f"\n  {DIM}{'─' * (w - 4)}{RESET}")
-    print(f"  {DIM}Presiona cualquier tecla para volver al detalle{RESET}")
+    w = term_width()
+    print(f"\n  {BOLD}Abriendo en navegador:{RESET}  {C_CYAN}{att['name']}{RESET}")
+    print(f"  {DIM}{url}{RESET}\n")
+    webbrowser.open(url)
+    print(f"  {C_GREEN}✓ Imagen abierta en el navegador.{RESET}")
+    print(f"  {DIM}{'─' * (w - 4)}{RESET}")
+    print(f"  {DIM}Presiona cualquier tecla para volver{RESET}")
     get_key()
 
 
@@ -484,27 +496,22 @@ def build_detail_lines(issue, attachments, jira):
             name_d   = trunc(att["name"], inner - 10)
 
             if is_img:
-                # Línea marcada con metadata para Enter-to-expand
+                # Línea marcada con metadata para Enter → abrir en navegador
                 img_meta = {"type": "image", "att": att}
-                plain    = f"{icon_chr} {name_d}  [Enter para expandir]"
+                plain    = f"{icon_chr} {name_d}  → Enter: abrir en navegador"
                 ansi_str = (f"{icon_chr} {C_BLUE}{name_d}{RESET}"
-                            f"  {DIM}[Enter para expandir]{RESET}")
+                            f"  {DIM}→ Enter: abrir en navegador{RESET}")
                 pad = inner - len(plain)
                 lines.append((f"  │ {ansi_str}{' ' * max(0, pad)} │", img_meta))
             else:
                 add_box_row(f"{icon_chr} {name_d}")
 
-            # Preview ASCII inline debajo del nombre
-            if is_img and att.get("url"):
-                add_blank()
-                preview = render_image_preview(
-                    att["url"], jira.headers, width=min(inner - 4, 55)
-                )
-                for pl in preview:
-                    vis = strip_ansi(pl)
-                    pad = inner - len(vis)
-                    lines.append((f"  │ {pl}{' ' * max(0, pad)} │", None))
-                add_blank()
+            # Hint para abrir en navegador
+            if is_img:
+                hint_plain = "[Enter para abrir en navegador]"
+                hint_ansi  = f"{DIM}{hint_plain}{RESET}"
+                pad = inner - len(hint_plain)
+                lines.append((f"  │ {hint_ansi}{' ' * max(0, pad)} │", None))
 
     # Análisis Scrum Master
     add_hline()
@@ -521,150 +528,336 @@ def build_detail_lines(issue, attachments, jira):
     return lines
 
 
-# ── Pantalla 1: Tablero Kanban ────────────────────────────────────────────────
-def build_card(issue, col_w, selected):
-    inner  = col_w - 2
-    bc     = f"{C_CYAN}{BOLD}" if selected else DIM
-    be     = RESET
+# ── Pantalla 0: Menú de carriles (epics) ─────────────────────────────────────
 
-    key_str   = trunc(issue["key"],     inner - 3)
-    title_str = trunc(issue["summary"], inner - 1)
-    assignee  = trunc(issue.get("assignee", "—"), 14)
-    priority  = trunc(issue.get("priority",  "—"),  8)
-    meta_str  = f"@{assignee}  !{priority}"
-    marker    = "◀" if selected else " "
+def _build_epic_groups(all_issues, epics_map):
+    """Agrupa issues por epic. Retorna lista ordenada de (epic_key, name, [issues])."""
+    groups = {}
+    for issue in all_issues:
+        ek = issue.get("epic_key") or "__none__"
+        groups.setdefault(ek, []).append(issue)
 
-    def box_line(plain, ansi=None):
-        a   = ansi or plain
-        pad = inner - 1 - len(plain)
-        return f"{bc}│{be} {a}{' ' * max(0, pad)}{bc}│{be}"
-
-    l1 = f"{bc}┌{'─' * inner}┐{be}"
-    key_disp = f"{BOLD}{key_str}{RESET}" if selected else key_str
-    key_pad  = inner - 2 - len(key_str)
-    l2 = (f"{bc}│{be} {key_disp}"
-          f"{' ' * max(0, key_pad)}"
-          f"{C_CYAN if selected else DIM}{marker}{be}"
-          f"{bc}│{be}")
-    l3 = box_line(title_str, f"{DIM}{title_str}{RESET}")
-    l4 = box_line(meta_str,  f"{DIM}{meta_str}{RESET}")
-    l5 = f"{bc}└{'─' * inner}┘{be}"
-
-    return [l1, l2, l3, l4, l5]
+    result = []
+    for ek, issues in sorted(groups.items(), key=lambda x: -len(x[1])):
+        name = epics_map.get(ek, "(Sin carril)" if ek == "__none__" else ek)
+        result.append((ek, name, issues))
+    return result
 
 
-def render_board(columns, active_col, cursors, offsets, cards_visible, project):
-    w       = term_width()
-    gap     = 2
-    col_w   = (w - 2 - gap * 2) // 3
-    gap_str = " " * gap
-
-    title = f"JIRA TUI  ·  Board {project}"
-    bar_w = w - 2
-    pad_l = (bar_w - len(title)) // 2
-    pad_r = bar_w - len(title) - pad_l
-    print(f"{BOLD}{C_CYAN}╔{'═' * bar_w}╗")
-    print(f"║{' ' * pad_l}{title}{' ' * pad_r}║")
-    print(f"╚{'═' * bar_w}╝{RESET}")
-    print(f"  {DIM}[↑↓] Mover   [←→] Cambiar columna   [Enter] Abrir   [r] Recargar   [q] Salir{RESET}")
-    print()
-
-    header_row, divider_row = "  ", "  "
-    for ci, (name, color) in enumerate(zip(COLUMN_ORDER, COLUMN_COLORS)):
-        icon        = COLUMN_ICONS[ci]
-        total       = len(columns[ci])
-        label       = f"{icon} {name} ({total})"
-        has_above   = offsets[ci] > 0
-        has_below   = (offsets[ci] + cards_visible) < total
-        scroll_hint = ""
-        if has_above and has_below:
-            scroll_hint = f" {DIM}↑↓{RESET}"
-        elif has_above:
-            scroll_hint = f" {DIM}↑{RESET}"
-        elif has_below:
-            scroll_hint = f" {DIM}↓{RESET}"
-
-        cell = (f"{BOLD}{color}{label}{RESET}{scroll_hint}" if ci == active_col
-                else f"{DIM}{color}{label}{RESET}{scroll_hint}")
-        header_row  += pad_to(cell, col_w)
-        divider_row += f"{DIM}{'─' * col_w}{RESET}"
-        if ci < 2:
-            header_row  += gap_str
-            divider_row += gap_str
-    print(header_row)
-    print(divider_row)
-    print()
-
-    for row_idx in range(cards_visible):
-        card_matrix = []
-        for ci, col_issues in enumerate(columns):
-            abs_idx = offsets[ci] + row_idx
-            sel     = (ci == active_col and abs_idx == cursors[ci])
-            if abs_idx < len(col_issues):
-                card_matrix.append(build_card(col_issues[abs_idx], col_w, sel))
-            else:
-                card_matrix.append([" " * col_w] * 5)
-
-        for line_i in range(5):
-            row_str = "  "
-            for ci, card_lines in enumerate(card_matrix):
-                row_str += card_lines[line_i]
-                if ci < 2:
-                    row_str += gap_str
-            print(row_str)
-        print()
-
-
-def screen_issue_list(jira, project):
-    all_issues  = []
-    col         = 0
-    cursors     = [0, 0, 0]
-    offsets     = [0, 0, 0]
-    need_reload = True
+def screen_epic_menu(jira, project, all_issues, epics_map):
+    cursor  = 0
+    num_buf = ""
 
     while True:
-        if need_reload:
-            clear()
-            print(f"\n  {DIM}Cargando tareas...{RESET}")
-            all_issues  = jira.get_my_issues(project)
-            need_reload = False
+        epic_groups  = _build_epic_groups(all_issues, epics_map)
+        total_epics  = len(epic_groups)
+        total_issues = len(all_issues)
+        cursor = min(cursor, max(0, total_epics - 1))
 
-        columns       = group_by_status(all_issues)
-        ts            = term_size()
-        cards_visible = max(1, (ts.lines - 8) // 6)
-
-        for ci in range(3):
-            cursors[ci] = min(cursors[ci], max(0, len(columns[ci]) - 1))
-
-        for ci in range(3):
-            if cursors[ci] < offsets[ci]:
-                offsets[ci] = cursors[ci]
-            if cursors[ci] >= offsets[ci] + cards_visible:
-                offsets[ci] = cursors[ci] - cards_visible + 1
+        ts = term_size()
+        w  = ts.columns
+        header_h  = 5
+        footer_h  = 2
+        visible_h = max(1, ts.lines - header_h - footer_h)
 
         clear()
-        render_board(columns, col, cursors, offsets, cards_visible, project)
+
+        title = f"JIRA TUI  ·  {project}  ·  Sprint Activo"
+        bar_w = w - 2
+        pad_l = (bar_w - len(title)) // 2
+        pad_r = bar_w - len(title) - pad_l
+        print(f"{BOLD}{C_CYAN}╔{'═' * bar_w}╗")
+        print(f"║{' ' * pad_l}{title}{' ' * pad_r}║")
+        print(f"╚{'═' * bar_w}╝{RESET}")
+
+        print(
+            f"  {DIM}[↑↓] Navegar  [Enter] Abrir carril  "
+            f"[número+Enter] Ir directo  [r] Recargar  [q] Salir{RESET}"
+        )
+        if num_buf:
+            print(
+                f"  {C_CYAN}→ Carril #{BOLD}{num_buf}{RESET}"
+                f"{C_CYAN}_  {DIM}(Enter confirmar · ESC cancelar){RESET}"
+            )
+        else:
+            print(
+                f"  {DIM}{total_issues} incidencias en {total_epics} carriles  "
+                f"│  Escribe un número para ir directo{RESET}"
+            )
+
+        print()
+        print(f"  {DIM}{'─' * (w - 4)}{RESET}")
+
+        # Render epic rows with scroll
+        all_rows = []
+        for i, (ek, name, issues) in enumerate(epic_groups):
+            all_rows.append((i, ek, name, len(issues)))
+
+        # Scroll so cursor stays visible
+        if not hasattr(screen_epic_menu, "_scroll"):
+            screen_epic_menu._scroll = 0
+        sc = screen_epic_menu._scroll
+
+        if cursor < sc:
+            sc = cursor
+        elif cursor >= sc + visible_h:
+            sc = cursor - visible_h + 1
+        sc = max(0, min(sc, max(0, len(all_rows) - visible_h)))
+        screen_epic_menu._scroll = sc
+
+        for i, ek, name, count in all_rows[sc:sc + visible_h]:
+            selected = (i == cursor)
+            num_s   = f"[{i + 1:2d}]"
+            count_s = f"{count} incidencia{'s' if count != 1 else ''}"
+            name_w  = max(10, w - 4 - 6 - 2 - len(count_s) - 4)
+            name_t  = trunc(name, name_w)
+            gap     = max(0, name_w - len(name_t))
+
+            if selected:
+                print(
+                    f"  {C_CYAN}{BOLD}{num_s}  {name_t}{' ' * gap}  "
+                    f"{count_s}{RESET}  {C_CYAN}{BOLD}◀{RESET}"
+                )
+            else:
+                print(
+                    f"  {DIM}{num_s}{RESET}  {name_t}{' ' * gap}  "
+                    f"{DIM}{count_s}{RESET}"
+                )
+
+        print(f"  {DIM}{'─' * (w - 4)}{RESET}")
+        print()
 
         key = get_key()
 
-        if key == "UP":
-            cursors[col] = max(0, cursors[col] - 1)
-        elif key == "DOWN":
-            if columns[col]:
-                cursors[col] = min(len(columns[col]) - 1, cursors[col] + 1)
-        elif key == "LEFT":
-            col = max(0, col - 1)
-        elif key == "RIGHT":
-            col = min(2, col + 1)
+        if key in "0123456789":
+            num_buf += key
+        elif key in ("\x7f", "\x08"):
+            num_buf = num_buf[:-1]
+        elif key == "ESC":
+            num_buf = ""
         elif key == "\r":
-            if columns[col] and cursors[col] < len(columns[col]):
-                result = screen_issue_detail(jira, columns[col][cursors[col]])
+            target_idx = cursor
+            if num_buf:
+                try:
+                    target_idx = int(num_buf) - 1
+                except ValueError:
+                    pass
+                num_buf = ""
+            if 0 <= target_idx < total_epics:
+                cursor = target_idx
+                ek, name, issues = epic_groups[cursor]
+                result = screen_issue_list(jira, project, issues, epic_name=name)
                 if result == "reload":
-                    need_reload = True
-                    cursors = [0, 0, 0]
-                    offsets = [0, 0, 0]
+                    return "reload"
+        elif key == "UP":
+            cursor  = max(0, cursor - 1)
+            num_buf = ""
+        elif key == "DOWN":
+            cursor  = min(total_epics - 1, cursor + 1)
+            num_buf = ""
         elif key.lower() == "r":
-            need_reload = True
+            return "reload"
+        elif key.lower() == "q":
+            clear()
+            print(f"\n  {C_GREEN}¡Hasta luego!{RESET}\n")
+            sys.exit(0)
+
+
+# ── Pantalla 1: Lista de incidencias ─────────────────────────────────────────
+
+def build_list_rows(columns):
+    rows = []
+    num = 1
+    for ci, col_issues in enumerate(columns):
+        rows.append({"type": "header", "ci": ci, "count": len(col_issues)})
+        for issue in col_issues:
+            rows.append({"type": "issue", "issue": issue, "num": num})
+            num += 1
+        if not col_issues:
+            rows.append({"type": "empty"})
+        rows.append({"type": "spacer"})
+    return rows
+
+
+def render_issue_row(issue, num, selected, w):
+    key      = issue["key"]
+    summary  = issue["summary"]
+    assignee = trunc(issue.get("assignee", "—"), 14)
+    priority = trunc(issue.get("priority", "—"), 8)
+    st_color, st_icon = status_display(issue.get("status", ""))
+
+    num_s    = f"[{num:2d}]"
+    assign_s = f"@{assignee}"
+    prio_s   = f"!{priority}"
+
+    # prefix fixed width: 2 + 4 + 2 + 10 + 2 = 20
+    prefix_len = 20
+    tail_plain = f"  {assign_s:<16}  {prio_s:<10}  {st_icon}"
+    sum_w = max(10, w - prefix_len - len(tail_plain) - (3 if selected else 0) - 2)
+    sum_s = trunc(summary, sum_w)
+
+    if selected:
+        return (
+            f"  {C_CYAN}{BOLD}{num_s}{RESET}  "
+            f"{C_CYAN}{BOLD}{key:<10}{RESET}  "
+            f"{BOLD}{C_WHITE}{sum_s:<{sum_w}}{RESET}"
+            f"  {DIM}{assign_s:<16}  {prio_s:<10}{RESET}  "
+            f"{st_color}{st_icon}{RESET}"
+            f"  {C_CYAN}{BOLD}◀{RESET}"
+        )
+    return (
+        f"  {DIM}{num_s}{RESET}  "
+        f"{key:<10}  "
+        f"{trunc(summary, sum_w):<{sum_w}}"
+        f"  {DIM}{assign_s:<16}  {prio_s:<10}{RESET}  "
+        f"{st_color}{st_icon}{RESET}"
+    )
+
+
+def screen_issue_list(jira, project, issues, epic_name=""):
+    cursor  = 0
+    scroll  = 0
+    num_buf = ""
+
+    columns     = group_by_status(issues)
+    rows        = build_list_rows(columns)
+    issues_flat = [r["issue"] for r in rows if r["type"] == "issue"]
+    total_issues = len(issues_flat)
+
+    while True:
+        cursor = min(cursor, max(0, total_issues - 1))
+
+        ts = term_size()
+        w  = ts.columns
+        header_h  = 6
+        footer_h  = 2
+        visible_h = max(1, ts.lines - header_h - footer_h)
+
+        # Build flat rendered lines
+        flat_lines = []   # (text, is_issue, issue_idx)
+        issue_idx  = 0
+        for row in rows:
+            t = row["type"]
+            if t == "header":
+                ci    = row["ci"]
+                color = COLUMN_COLORS[ci]
+                icon  = COLUMN_ICONS[ci]
+                name  = COLUMN_ORDER[ci]
+                count = row["count"]
+                flat_lines.append(("", False, -1))
+                flat_lines.append((
+                    f"  {BOLD}{color}{icon}  {name}  ({count}){RESET}",
+                    False, -1,
+                ))
+                flat_lines.append((
+                    f"  {DIM}{'─' * (w - 4)}{RESET}",
+                    False, -1,
+                ))
+            elif t == "empty":
+                flat_lines.append((f"  {DIM}    (sin tareas){RESET}", False, -1))
+            elif t == "spacer":
+                flat_lines.append(("", False, -1))
+            elif t == "issue":
+                selected = (issue_idx == cursor)
+                line = render_issue_row(row["issue"], row["num"], selected, w)
+                flat_lines.append((line, True, issue_idx))
+                issue_idx += 1
+
+        total_lines = len(flat_lines)
+
+        # Keep cursor's line visible
+        sel_line = next(
+            (i for i, (_, is_issue, idx) in enumerate(flat_lines)
+             if is_issue and idx == cursor),
+            0,
+        )
+        if sel_line < scroll:
+            scroll = sel_line
+        elif sel_line >= scroll + visible_h:
+            scroll = sel_line - visible_h + 1
+        scroll = max(0, min(scroll, max(0, total_lines - visible_h)))
+
+        clear()
+
+        # Header
+        carril_label = trunc(epic_name, w - 20) if epic_name else project
+        title = f"JIRA TUI  ·  {carril_label}"
+        bar_w = w - 2
+        pad_l = (bar_w - len(title)) // 2
+        pad_r = bar_w - len(title) - pad_l
+        print(f"{BOLD}{C_CYAN}╔{'═' * bar_w}╗")
+        print(f"║{' ' * pad_l}{title}{' ' * pad_r}║")
+        print(f"╚{'═' * bar_w}╝{RESET}")
+
+        pct = (f"  {int(scroll / max(1, total_lines - visible_h) * 100)}%"
+               if total_lines > visible_h else "")
+        print(
+            f"  {DIM}[↑↓] Navegar  [Enter] Abrir  "
+            f"[número+Enter] Ir directo  [b/ESC] Volver  [q] Salir{RESET}"
+            f"{DIM}{pct}{RESET}"
+        )
+        print(
+            f"  {C_CYAN}{trunc(epic_name, w - 6)}{RESET}"
+            if epic_name else ""
+        )
+
+        if num_buf:
+            print(
+                f"  {C_CYAN}→ Tarea #{BOLD}{num_buf}{RESET}"
+                f"{C_CYAN}_  {DIM}(Enter confirmar · ESC cancelar){RESET}"
+            )
+        else:
+            print(
+                f"  {DIM}{total_issues} incidencias  │  "
+                f"Escribe un número para ir directo{RESET}"
+            )
+
+        # Content
+        for text, _, _ in flat_lines[scroll:scroll + visible_h]:
+            print(text)
+
+        # Footer
+        print()
+        print(
+            f"  {DIM}Abre una tarea y usa: "
+            f"[1] Subir evidencia  [2] Comentar  [3] Estado  "
+            f"[4] {C_CYAN}✦ Flujo completo{RESET}"
+        )
+
+        key = get_key()
+
+        if key in "0123456789":
+            num_buf += key
+        elif key in ("\x7f", "\x08"):
+            num_buf = num_buf[:-1]
+        elif key == "ESC":
+            num_buf = ""
+        elif key == "\r":
+            if num_buf:
+                try:
+                    target = int(num_buf) - 1
+                    if 0 <= target < total_issues:
+                        cursor = target
+                        result = screen_issue_detail(jira, issues_flat[cursor])
+                        if result == "reload":
+                            return "reload"
+                except ValueError:
+                    pass
+                num_buf = ""
+            elif issues_flat and 0 <= cursor < total_issues:
+                result = screen_issue_detail(jira, issues_flat[cursor])
+                if result == "reload":
+                    return "reload"
+        elif key == "UP":
+            cursor  = max(0, cursor - 1)
+            num_buf = ""
+        elif key == "DOWN":
+            cursor  = min(total_issues - 1, cursor + 1)
+            num_buf = ""
+        elif key.lower() == "r":
+            return "reload"
+        elif key.lower() == "b" or key == "ESC":
+            return None
         elif key.lower() == "q":
             clear()
             print(f"\n  {C_GREEN}¡Hasta luego!{RESET}\n")
@@ -758,7 +951,7 @@ def screen_issue_detail(jira, issue_summary):
             if abs_i < total:
                 _, meta = detail_lines[abs_i]
                 if meta and meta.get("type") == "image":
-                    expand_image(meta["att"], jira.headers)
+                    expand_image(meta["att"], jira.download_headers)
         elif key == "1":
             action_upload_only(jira, issue)
         elif key == "2":
@@ -969,7 +1162,38 @@ def action_full_flow(jira, issue):
 # ── Punto de entrada ──────────────────────────────────────────────────────────
 def run_app(jira, project):
     try:
-        screen_issue_list(jira, project)
+        while True:
+            clear()
+            print(f"\n  {DIM}Cargando sprint activo...{RESET}")
+            all_issues = jira.get_my_issues(project)
+
+            if not all_issues:
+                clear()
+                print(f"\n  {C_YELLOW}⚠  No se encontraron tareas en el proyecto {project}.{RESET}")
+                print(f"  {DIM}  • Verifica la clave del proyecto y el board ID en .env{RESET}")
+                print(f"  {DIM}  • Asegúrate de que hay un sprint activo{RESET}")
+                print(f"\n  {DIM}[r] Reintentar  [q] Salir{RESET}\n")
+                while True:
+                    k = get_key()
+                    if k.lower() == "r":
+                        break
+                    elif k.lower() == "q":
+                        clear()
+                        print(f"\n  {C_GREEN}¡Hasta luego!{RESET}\n")
+                        sys.exit(0)
+                continue
+
+            print(f"  {DIM}Cargando información de carriles...{RESET}")
+            epic_keys = list({i["epic_key"] for i in all_issues if i.get("epic_key")})
+            epics_map = jira.get_epics_info(epic_keys)
+
+            # Resetear scroll del menú en cada recarga
+            if hasattr(screen_epic_menu, "_scroll"):
+                screen_epic_menu._scroll = 0
+
+            result = screen_epic_menu(jira, project, all_issues, epics_map)
+            if result != "reload":
+                break
     except KeyboardInterrupt:
         clear()
         print(f"\n  {C_GREEN}¡Hasta luego!{RESET}\n")
