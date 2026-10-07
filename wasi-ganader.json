@@ -1,0 +1,155 @@
+{
+  "carriles": [
+    {
+      "nombre": "Nuevo destino Agropecuario: WASI - Solicitud",
+      "total_incidencias": 11,
+      "incidencias": [
+        {
+          "key": "FCBIN-3170",
+          "titulo": "Filtrado dinámico de Actividades Verdes según Tipo de Evaluación",
+          "horas": "8h",
+          "descripcion": "|HU 11|Filtrado dinámico de Actividades Verdes según Tipo de Evaluación|\r\n|Yo Como|Responsable de Banca Rural|\r\n|Quiero|Que el campo \"Actividad Verde\" muestre opciones específicas dependiendo de si el \"Tipo de evaluación\" es Agrícola o Pecuario.|\r\n|Para|Asegurar el registro correcto de la actividad sustentable y evitar errores de categorización en la operación verde.|\r\n|Criterios de Aceptación|1. El sistema debe mostrar el campo \"Actividad Verde\" como un desplegable de selección única.\r\n2. Si el usuario selecciona \"Agrícola\" en Tipo de Evaluación, las opciones de Actividad Verde deben ser: Riego por Goteo, Riego por Aspersión y Cultivos Orgánicos.\r\n3. Si el usuario selecciona \"Pecuario\" en Tipo de Evaluación, las opciones de Actividad Verde deben ser: Piscicultura y Apicultura.\r\n4. El cambio de opciones en el catálogo de \"Actividad Verde\" debe ser automático e instantáneo al cambiar la selección del \"Tipo de evaluación\".\r\n5. Si se cambia el Tipo de Evaluación después de haber seleccionado una Actividad Verde, el campo de actividad debe limpiarse o resetearse para obligar a una nueva selección válida.|"
+        },
+        {
+          "key": "FCBIN-2939",
+          "titulo": "Registro de datos del titular y producto para pre-evaluación",
+          "horas": "8h",
+          "descripcion": "|HU 01|Selección de Tipo de Operación y Subtipo (Cuotas)|\r\n|Yo Como|Responsable de Banca Rural|\r\n|Quiero|Seleccionar la operación \"Agropecuario Cuotas\" y definir su subtipo de crédito.|\r\n|Para|Habilitar el flujo de amortización fraccionada del capital en periodos fijos.|\r\n|Criterios de Aceptación|1. El sistema debe permitir seleccionar \"Agropecuario Cuotas\" del catálogo de operaciones. \r\n2. Al seleccionar este tipo de operación, el campo \"Subtipo de crédito\" debe filtrar y mostrar la opción \"Cuotas mensuales\". \r\n3. Las fechas valor no es editable y la fecha de de primer pago debe ser editable, calculándose según la normativa vigente.\r\n4. El campo \"Cantidad de cuotas\" debe permitir seleccionar el número de armadas (ej. 12) mediante un menú desplegable. \r\n5. El campo \"Periodo cuotas\" debe permitir definir la frecuencia de pago en días (ej. 30 para mensual). \r\n6. El sistema debe validar que la combinación de cantidad y periodo no exceda el plazo máximo permitido para el producto agrícola DEBE ser máximo 60 cuotas.|\r\n\r\n "
+        },
+        {
+          "key": "FCBIN-2940",
+          "titulo": "Parametrización de WASI Agropecuario a Cuotas",
+          "horas": "8h",
+          "descripcion": "|HU 02|Parametrización de WASI Agropecuario a Cuotas|\r\n|Yo Como|Responsable de Banca Rural|\r\n|Quiero|Definir el subtipo de crédito a cuotas, el destino del activo y las condiciones financieras del préstamo.|\r\n|Para|Estructurar un cronograma de pagos que se ajuste a la estacionalidad del cliente.|\r\n|Criterios de Aceptación|1. Al seleccionar \"Agropecuario a cuotas\", el sistema debe obligar a elegir un Subtipo de crédito (ej. Cuotas mensuales) y un Destino (FINES DE VIVIENDA).\r\n2. El campo \"Fecha valor\" debe estar bloqueado o pre-configurado según la fecha actual, permitiendo solo ediciones bajo permisos especiales.\r\n3. El campo \"Monto\" debe aceptar solo valores numéricos positivos en soles (S/).\r\n4. El sistema debe validar la Tasa (%) ingresada: debe ser ≥ Tasa mínima y ≤ Tasa máxima.\r\n5. Si la tasa está fuera de rango, el sistema debe mostrar un mensaje de error y no permitir el cálculo del cronograma.\r\n6. Debe mostar el mensaje solicitar autorizacion de tasa y luego debe ingresar un mensaje.|"
+        },
+        {
+          "key": "FCBIN-2941",
+          "titulo": "Selección del Tipo de Evaluación (Agrícola/Pecuario)",
+          "horas": "8h",
+          "descripcion": "|HU 03|Selección del Tipo de Evaluación (Agrícola/Pecuario)|\r\n|Yo Como|Responsable de Banca Rural|\r\n|Quiero|Clasificar la actividad principal a evaluar mediante un selector de tipo de evaluación.|\r\n|Para|Definir el motor de reglas y los campos específicos que el sistema habilitará para el análisis de la actividad productiva del cliente.|\r\n|Criterios de Aceptación|1. El campo \"Tipo de evaluación\" debe presentarse como un menú desplegable dentro del acordeón \"DATOS DE SOLICITUD Y PRODUCTO\".\r\n2. El sistema debe permitir elegir exclusivamente entre dos opciones: \"Agrícola\" y \"Pecuario\".\r\n3. La selección debe realizarse mediante un radio button dentro del menú desplegable.\r\n4. Al seleccionar una opción, el borde del campo debe resaltarse en color azul para confirmar la selección activa.|"
+        },
+        {
+          "key": "FCBIN-2942",
+          "titulo": "Cálculo de Cronograma con Múltiples Cuotas",
+          "horas": "8h",
+          "descripcion": "|HU 04|Cálculo de Cronograma con Múltiples Cuotas|\r\n|Yo Como|Responsable de Banca Rural|\r\n|Quiero|Generar la proyección de pagos detallada para el esquema de cuotas fraccionadas.|\r\n|Para|Mostrar al cliente el monto de cada cuota mensual, incluyendo el seguro de desgravamen y otros cargos aplicables.|\r\n|Criterios de Aceptación|1. Al presionar \"+ Calcular Cronograma\", el sistema debe generar una tabla con tantas filas como se definieron en la \"Cantidad de cuotas\". \r\n2. Cada fila debe detallar de forma independiente: Fecha de vencimiento, Capital, Interés, Seguros (ej. Desgravamen o Vida Segura) y Total de la cuota. \r\n3. Se debe incluir un switch \"Cuota seguro\" para permitir el cobro de la prima de seguro de forma nivelada en cada cuota.|"
+        },
+        {
+          "key": "FCBIN-3164",
+          "titulo": "Generación y Visualización de Cronograma Multicuota",
+          "horas": "8h",
+          "descripcion": "|HU 05|Generación y Visualización de Cronograma Multicuota|\r\n|Yo Como|Responsable de Banca Rural|\r\n|Quiero|Visualizar el detalle de todas las armadas generadas tras el cálculo del cronograma para el producto a cuotas.|\r\n|Para|Validar que la distribución del capital y los cargos adicionales (seguros y comisiones) coincidan con la capacidad de pago pactada con el cliente.|\r\n|Criterios de Aceptación|1. Tras presionar \"+ Calcular Cronograma\", el sistema debe desplegar un modal con el listado completo de cuotas numeradas en orden ascendente (Ej: Cuota 1, Cuota 2, ..., Cuota N). \r\n2. Para cada registro de cuota, el sistema debe mostrar obligatoriamente: \r\n• Fecha de vencimiento: Calculada según el periodo de cuotas ingresado (ej. cada 30 días). \r\n• Capital: Porción del principal amortizado en la cuota. \r\n• Intereses: Monto calculado según la tasa asignada. \r\n• Seguros: Desglose de seguros aplicados (ej. Desgravamen). \r\n• Total a Pagar: Sumatoria total de la cuota. \r\n3. El modal debe permitir el desplazamiento (scroll) vertical si el número de cuotas excede el área de visualización. \r\n4. Los montos deben presentarse con el símbolo de moneda \"S/\" y dos decimales. 5. Debe incluir un botón \"Aceptar\" para confirmar la revisión y retornar a la pantalla de Alta-Solicitud.|"
+        },
+        {
+          "key": "FCBIN-3165",
+          "titulo": "Definición de Origen y Tipo de Operación Agrícola",
+          "horas": "8h",
+          "descripcion": "|HU 06|Definición de Origen y Tipo de Operación Agrícola|\r\n|Yo Como|Responsable de Banca Rural|\r\n|Quiero|Configurar el tipo de solicitud, modalidad de contratación y el módulo específico del producto.|\r\n|Para|Clasificar correctamente la solicitud y habilitar las opciones específicas del sector agropecuario.|\r\n|Criterios de Aceptación|1. El sistema debe permitir seleccionar \"Normal\" como Tipo de solicitud y \"Presencial\" como Tipo de contratación.\r\n2. Al seleccionar el Módulo \"Agrícola\", el sistema debe filtrar automáticamente el catálogo de \"Tipo de operación\".\r\n3. Se debe validar que si el switch \"Firma de Cónyuge\" está activo (SI), se requieran los datos del cónyuge en pasos posteriores.\r\n4. El switch \"Desembolso en Banco de la Nación\" debe ser excluyente de otras formas de desembolso bancario.|"
+        },
+        {
+          "key": "FCBIN-3166",
+          "titulo": "Parametrización de Cuotas Flexibles y Destino de Crédito",
+          "horas": "8h",
+          "descripcion": "|HU 07|Parametrización de Cuotas Flexibles y Destino de Crédito|\r\n| |Responsable de Banca Rural|\r\n|Quiero|Definir el subtipo de crédito flexible, el destino del activo y las condiciones financieras del préstamo.|\r\n|Para|Estructurar un cronograma de pagos que se ajuste a la estacionalidad del cliente.|\r\n|Criterios de Aceptación|1. Al seleccionar \"Agropecuario a cuotas\", el sistema debe obligar a elegir un Subtipo de crédito (ej. Cuotas mensuales) y un Destino (FINES DE VIVIENDA).\r\n2. El campo \"Fecha valor\" debe estar bloqueado o pre-configurado según la fecha actual, permitiendo solo ediciones bajo permisos especiales.\r\n3. El campo \"Monto\" debe aceptar solo valores numéricos positivos en soles (S/).\r\n4. El sistema debe validar la Tasa (%) ingresada: debe ser ≥ Tasa mínima y ≤ Tasa máxima.\r\n5. Si la tasa está fuera de rango, el sistema debe mostrar un mensaje de error y no permitir el cálculo del cronograma.\r\n6. Debe mostar el mensaje solicitar autorizacion de tasa y luego debe ingresar un mensaje.|"
+        },
+        {
+          "key": "FCBIN-3167",
+          "titulo": "Selección de Seguros Obligatorios y Opcionales",
+          "horas": "8h",
+          "descripcion": "|HU 08|Selección de Seguros Obligatorios y Opcionales|\r\n|Yo Como|Responsable de Banca Rural|\r\n|Quiero|Seleccionar las pólizas de seguro específicas solicitadas por el cliente.|\r\n|Para|Mitigar riesgos de impago y cumplir con las políticas de protección del crédito.|\r\n|Criterios de Aceptación|1. El sistema debe permitir la activación individual de los siguientes seguros mediante switches:   \r\n* Desgravamen Plus (Individual/Conyugal).   \r\n* Desgravamen Premier (Individual 2024/Conyugal).  \r\n * Multiriesgo para garantías / Multiriesgo Pyme 2024 Tasa.   \r\n* Cuota seguro (SI/NO).  \r\n * Vida Segura.   \r\n* Microseguro Oncológico.  \r\n * Protección Total Créditos.\r\n2. El sistema debe calcular automáticamente la prima de seguro correspondiente según la selección realizada.\r\n3. Se debe validar que si se selecciona un seguro conyugal, los datos de la pareja estén previamente registrados.|"
+        },
+        {
+          "key": "FCBIN-3168",
+          "titulo": "Personalización de Cuotas y Fechas de Pago",
+          "horas": "8h",
+          "descripcion": "|HU 09|Personalización de Cuotas y Fechas de Pago|\r\n|Yo Como|Responsable de Banca Rural|\r\n|Quiero|Acceder al detalle de cuotas flexibles para definir montos y fechas específicas para cada cuota.|\r\n|Para|Adaptar el repago del crédito a los ciclos de cosecha o ingresos extraordinarios del cliente.|\r\n|Criterios de Aceptación|1. Al hacer clic en el botón \"+ Cuotas Flexibles\", se debe abrir el modal \"Detalle Cuotas Flexibles\".\r\n2. El modal debe mostrar el Monto Total bloqueado (procedente de la pantalla principal).\r\n3. Para cada cuota (Cuota 1, 2, n...), el sistema debe permitir seleccionar la Fecha de Pago mediante un selector de calendario.\r\n4. El usuario debe poder ingresar manualmente el Monto de la Cuota Total para las cuotas intermedias.\r\n5. El botón \"Calcular Última Cuota\" debe calcular automáticamente el saldo restante para que la sumatoria de las cuotas coincida exactamente con el monto total solicitado.\r\n6. El botón \"Aceptar\" solo se habilitará cuando la suma de todas las cuotas sea igual al monto total del crédito.|"
+        },
+        {
+          "key": "FCBIN-3169",
+          "titulo": "Selección de Portafolio de Productos Verdes y subtipos",
+          "horas": "8h",
+          "descripcion": "|HU 10|Selección de Portafolio de Productos Verdes y subtipos|\r\n|Yo Como|Responsable de Banca Rural|\r\n|Quiero|Visualizar y seleccionar las operaciones clasificadas como \"Verdes\" dentro del flujo de alta de solicitud.|\r\n|Para|Ofrecer alternativas de financiamiento con beneficios ambientales|\r\n|Criterios de Aceptación|1. Al desplegar el campo \"Tipo de operación\", el sistema debe mostrar las siguientes opciones de la línea verde:   \r\n* Agropecuario Cuotas Verdes.   \r\n* Agropecuario Cuotas Flexibles Verdes.   \r\n* Agropecuario al Vencimiento Verde.\r\n2. El sistema debe permitir la marcación de una única opción mediante un botón de selección (radio button).\r\n3.La selección del subtipo \"Fogapi\" NO DEBE permitir el destino de credito FINES DE VIVIENDA.|"
+        }
+      ]
+    },
+    {
+      "nombre": "Nuevo destino Agropecuario: WASI - Aprobación",
+      "total_incidencias": 2,
+      "incidencias": [
+        {
+          "key": "FCBIN-2948",
+          "titulo": "Validación de Políticas, Excepciones y Autorizaciones",
+          "horas": "8h",
+          "descripcion": "|HU 01|Validación de Políticas, Excepciones y Autorizaciones|\r\n|Yo Como|Responsable de Banca Rural|\r\n|Quiero|Consultar las políticas observadas de la propuesta y el historial de decisiones de los diferentes niveles de autonomía|\r\n|Para|Conocer qué bloqueos requiere excepción y verificar qué instancias (Coordinador, Administrador, Gerente) ya han emitido una aprobación.|\r\n|Criterios de Aceptación|1. El sistema debe contar con un menú de pestañas dentro de \"Detalle Políticas\" que incluya: \"Políticas\", \"Autorizaciones\" y \"Autonomía\".\r\n2. En la pestaña \"Políticas\", el sistema debe listar los bloqueos generados (ej. código 1116), mostrando el Tipo de Bloqueo, el Aprobador requerido (ej. Admisión) y un campo para agregar un Comentario (máximo 400 caracteres).\r\n3. El sistema debe mostrar el campos de Politicas de créditos sin excepciones pendientes de aprobación para continuar con el proceso.\r\n3. En la pestaña \"Autorizaciones\", el sistema debe mostrar elementos desplegables (acordeones) para cada rol involucrado (Coordinador, Administrador, Gerente Corredor).\r\n4. Al expandir el acordeón de un rol que ya evaluó, el sistema debe mostrar en modo lectura: Usuario, Decisión (ej. Aprobación resaltada), Fecha/Hora de la acción y Comentario dejado por el aprobador.|"
+        },
+        {
+          "key": "FCBIN-2949",
+          "titulo": "Navegación a la aprobación del crédito",
+          "horas": null,
+          "descripcion": "|HU 02|Navegación a la aprobación del crédito|\r\n|Yo Como|Responsable de Banca Rural|\r\n|Quiero|Validar la información necesaria para el envio a aprobacion|\r\n|Para|Completar la información requerida del cliente y gestionar el flujo de aprobación del crédito según el estado de la evaluación.|\r\n|Criterios de Aceptación|1. La pestaña Propuesta debe estar rellenada de manera detallada. Se exige minimo 10 caracteres.\r\n2. En la parte inferior, el sistema debe mostrar los botones de acción primarios según el estado del flujo: \"Enviar\" (icono de subida) y \"Evaluación\" (icono de documento). Estos botones se muestran activos cuando no se tenga criterios de llenados sin completar.\r\n3. En estados de revisión o flujos alternos, el sistema debe mostrar un panel de 4 botones: \"Sincronizar\" (azul), \"Evaluación\" (azul), \"Rechazar\" (rojo con ícono 'X') y \"Continuar\" (verde con ícono 'Check').\r\n4. Al hacer clic en \"Enviar\" o \"Continuar\", el sistema debe validar que todos los campos obligatorios del sustento estén llenos antes de procesar la solicitud al siguiente nivel.|"
+        }
+      ]
+    },
+    {
+      "nombre": "Nuevo destino Agropecuario: WASI - Desembolso",
+      "total_incidencias": 4,
+      "incidencias": [
+        {
+          "key": "FCBIN-2950",
+          "titulo": "Validación para desembolso",
+          "horas": "4h",
+          "descripcion": "|HU 01|Validación para desembolso|\r\n|Yo Como|Responsable de Banca Rural|\r\n|Quiero|Validar la información necesaria para el envio a desembolso|\r\n|Para|Completar la información requerida del cliente y gestionar el flujo de desembolso del crédito|\r\n|Criterios de Aceptación|1. Sistema de validar que la instancia de origen fue cerrada y se reemplaza por la nueva operación de Ampliación\r\n2. Validar los tipos de contratacion que se puedan tener (Contrtacion electronica, presencial, BN y App Clientes.|"
+        },
+        {
+          "key": "FCBIN-3171",
+          "titulo": "VALIDACION DE EVALUACION SIMPLIFICADA",
+          "horas": "4h",
+          "descripcion": "|HU 02|VALIDACION DE EVALUACION SIMPLIFICADA|\r\n|Yo Como|Asesor de Créditos Agropecuarios|\r\n|Quiero|Mostrar la información del cliente, sus activos, pasivos y obtener el cálculo automático de su situación patrimonial|\r\n|Para|Validar el patrimonio real del cliente, su nivel de endeudamiento y la utilidad neta de su actividad económica.|\r\n|Criterios de Aceptación|1. El sistema debe MOSTRAR los datos de cabecera: Agencia, Cliente, Tipo de Cliente y Destino del Crédito. \r\n2. El sistema debe MOSTRAR La sección de \"Activos\" Efectivo, Ahorro, Cuentas por Cobrar e incluir tablas de detalle para \"Inventario\" y \"Activo Fijo\" (Producto, Cantidad, Precio, Valor). \r\n3. El sistema debe contar con una sección de \"Pasivos\" (Corto y Largo Plazo), incluyendo una tabla para detallar Adelanto de Proveedores (totales)\r\n4. El sistema debe mostrar automáticamente el Total Activo, Total Pasivo y Patrimonio. \r\n5. En la sección \"Evaluación Pyme\", el sistema debe calcular matemáticamente la Utilidad Bruta, Operativa, Neta y el Excedente final tras restar Gastos Operativos, Financieros y Familiares. \r\n6. El campo Aporte de activo fijo, solo se mostrará cuando el destino de crédito sea para ACTIVO FIJO, no para capital de trabajo. En balance general y ratios.\r\n7. En el balance se debe mostrar por separado Disponible y Aporte para activo fijo (Disponible - Aporte de AF)|"
+        },
+        {
+          "key": "FCBIN-3172",
+          "titulo": "Registro de Actividades Agrícolas, Pecuarias y Costos de Producción",
+          "horas": "4h",
+          "descripcion": "|HU 03|Registro de Actividades Agrícolas, Pecuarias y Costos de Producción|\r\n|Yo Como|Asesor de Créditos Agropecuarios|\r\n|Quiero|Registrar el detalle de los cultivos, las actividades ganaderas y sus respectivos costos de mantenimiento|\r\n|Para|Proyectar de manera precisa los ingresos generados por cada unidad productiva y su rentabilidad estacional.|\r\n|Criterios de Aceptación|1. En la sección \"Agricultura\", el sistema debe permitir registrar Cultivo, TIPO DE CULTIVO, Parcela, Etapa, Rendimiento y geolocalización (Coordenadas Latitud/Longitud). \r\n2. En la sección \"Pecuario y Otros\", el sistema debe mostrar la Actividad (ej. Producción de leche), Unidad, Cantidad para venta, Precio, Costo y Tipo de Calendario (Mensual/Escalonado). \r\n3. Se debe mostrar el campo NUEVO de INGRESOS DE SUBPRODUCTOS.\r\n3. El sistema debe incluir un módulo detallado de \"Costos\", categorizado por Alimentación (Forraje, Concentrados), Sanidad (Vacunas, Antibióticos), Reproducción y Mano de Obra. \r\n4. Cada ítem de costo debe MOSTRAR: Medida, Cantidad, Precio, Total, Fecha y Tipo de Gasto. \r\n5. El sistema debe totalizar automáticamente los costos e integrarlos al flujo de egresos del cliente. |"
+        },
+        {
+          "key": "FCBIN-3173",
+          "titulo": "Generación de Flujo de Caja Mensual, Diseño de Crédito y Plan de Contingencia",
+          "horas": null,
+          "descripcion": "|HU 04|Generación de Flujo de Caja Mensual, Diseño de Crédito y Plan de Contingencia|\r\n|Yo Como|Asesor de Créditos Agropecuarios|\r\n|Quiero|Generar la proyección mensual de ingresos/egresos, estructurar la cuota del crédito y documentar las referencias|\r\n|Para|Validar la capacidad de pago del cliente a lo largo del tiempo y mitigar el riesgo crediticio ante posibles fallas.|\r\n|Criterios de Aceptación|1. El sistema debe MOSTAR una matriz de \"Flujo de Caja y Diseño Crediticio\" con columnas mensuales proyectadas (ej. Ene-26 a Feb-27). \r\n2. La matriz mensual debe consolidar de forma automática los Ingresos (Agricultura, Ganadería, Pyme) y Egresos registrados en las HU anteriores. \r\n3. La matriz debe permitir ingresar valores mensuales para \"Necesidad Crédito\", \"Cuota\", \"Capital\", \"Intereses\" y \"Seguros\", calculando el \"Excedente Final\". \r\n4. El sistema debe Mostrar una tabla de \"Referencias\" Nombre, Tipo, Nro de Teléfono y Referencia.|"
+        }
+      ]
+    },
+    {
+      "nombre": "Nuevo Subtipo Agropecuario: GANADERO - Solicitud",
+      "total_incidencias": 1,
+      "incidencias": [
+        {
+          "key": "FCBIN-3319",
+          "titulo": "Registro de Datos de Producto para Solicitud credito ganadero",
+          "horas": "1,6h",
+          "descripcion": "|HU 02|Registro de Datos de Producto para Solicitud crédito ganadero|\r\n|Yo Como|Asesor de Negocios / Analista de Créditos|\r\n|Quiero|seleccionar el módulo, tipo de operación, subtipo de crédito y tipo de evaluación en la pantalla de \"Alta-Solicitud\"|\r\n|Para|categorizar correctamente el crédito y generar el detalle del plan de pagos correspondiente a la solicitud del cliente.|\r\n|Criterios de Aceptación|1. El sistema debe presentar una sección desplegable llamada \"DATOS DEL PRODUCTO\" dentro de la vista \"Alta-Solicitud\"\r\n2. El campo obligatorio \"Módulo *\" debe permitir la selección de opciones como \"Agropecuario\" *(NUEVO)*\r\n3. Al desplegar el campo obligatorio \"Tipo de operación *\", el sistema debe listar las siguientes opciones: \"Agropecuario Vcto\", \"Agropecuario Cuotas Flexibles\", \"Agropecuario Cuotas\", \"Agropecuario Vcto Verde\", \"Agropecuario Cuotas Verde\" y \"Agropecuario Cuotas Flexibles Verde\".\r\n4. Cada Tipo de operación tiene por defecto un Subtipo de crédito determinado ya parametrizado; ejemplo Si se selecciona \"Agropecuario Cuotas Flexibles\" como Tipo de operación, el campo \"Subtipo de crédito *\" debe mostrar la opción \"Flexibles\".\r\n5. El sistema debe contar con un campo desplegable para \"Tipo de evaluación *\" que incluya la opción \"Agrícola\" y \"PECUARIO\"\r\n6. Al completar los datos del producto, se debe mostrar la sección \"DETALLE DE PLAN DE PAGO DE CREDITOS\". En el detalle del plan de pago, el campo \"Fecha Valor *\" debe mostrarse prellenado y bloqueado (con ícono de candado) para que no sea editable por el usuario.\r\n7. El sistema debe mostrar el campo \"Actividad Verde\" como un desplegable de selección única.\r\n8. Si el usuario selecciona \"Pecuario\" en Tipo de Evaluación, las opciones de Actividad Verde deben ser: Solamente Piscicultura y Apicultura.\r\n \r\n|"
+        }
+      ]
+    },
+    {
+      "nombre": "Nuevo Subtipo Agropecuario: GANADERO - Evaluación/propuesta",
+      "total_incidencias": 2,
+      "incidencias": [
+        {
+          "key": "FCBIN-3322",
+          "titulo": "VALIDACION DE PROCESO DE EVALUACIÓN",
+          "horas": "2,4h",
+          "descripcion": "|HU 01|VALIDACION DE PROCESO DE EVALUACIÓN|\r\n|Yo Como|Responsable de Banca Rural|\r\n|Quiero|Validar el proceso de evaluación del crédito agropecuario|\r\n|Para|Iniciar el flujo de evaluación|\r\n|Criterios de Aceptación|1. El sistema debe validar el flujo de evaluacion END TO END vigente en Activos (corriente, fijo y destino) ; Pasivos, Referencias, Evaluacion No Financiera, Evaluacion Pyme; Resumen pyme; Sustento patrimonial; Gestor Documental; Comite de crédito; Flujo de Caja; Diseño crediticio; propuesta de crédito; Igual a la desarrollada para Banca Individual . No varia para el producto agropecuario.|"
+        },
+        {
+          "key": "FCBIN-3321",
+          "titulo": "Gestión de Formulario Pecuario con Navegación por Pestañas y Progreso",
+          "horas": null,
+          "descripcion": "|HU 40|Gestión de Formulario Pecuario con Navegación por Pestañas y Progreso|\r\n|Yo Como|Responsable de banca rural|\r\n|Quiero|Visualizar una estructura de navegación por pestañas (Actividad, Ingresos, Egresos) con una barra de progreso integrada.|\r\n|Para|Completar el registro de la actividad pecuaria de forma secuencial y organizada, asegurando la integridad de los datos antes de avanzar.|\r\n|Criterios de Aceptación|1. El sistema al seleccionar TIPO DE EVALUACION \" PECUARIA\" *SOLO* debe mostrar los cajones \"PECUARIO Y OTROS\" y \"OTROS INGRESOS\". La actividad Agricultura no se habilitará\r\n2. Se debe visualizar una barra de progreso bajo los tabs que indique el porcentaje de completitud de la sección actual.\r\n3. Flujo de Primer Registro: Las pestañas de \"Ingresos\" y \"Egresos\" deben permanecer bloqueadas (deshabilitadas) hasta que todos los campos obligatorios de la pestaña previa hayan sido completados y validados.\r\n4. El botón \"Continuar\" solo se habilitará cuando los campos obligatorios de la vista actual estén llenos.\r\n5. Flujo de Edición: Si el registro ya existe y está completo, todas las pestañas deben estar habilitadas desde el inicio para permitir la navegación libre entre ellas.\r\n6. El campo \"Grupo de actividad\" debe aparecer pre-completado como \"Producción Pecuaria\" y bloqueado (lectura) según el diseño.|"
+        }
+      ]
+    }
+  ],
+  "total_hu": 20
+}
